@@ -4,3 +4,9 @@
     ``` bash
     python scripts/extract_frames.py --video ensantina.mp4
     ```
+
+## Label Data in data directory
+To open Label Studio:
+```bash
+docker run -it -p 8080:8080 -v ${PWD}/data/labelstudio:/label-studio/data heartexlabs/label-studio:latest
+```
