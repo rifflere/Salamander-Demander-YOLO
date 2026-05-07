@@ -31,8 +31,8 @@ def main() -> None:
                         help="Path to the input video file")
     parser.add_argument("--output-dir", default="data/captured",
                         help="Directory to save extracted frames (default: data/captured)")
-    parser.add_argument("--interval", type=int, default=30,
-                        help="Save every Nth frame (default: 30)")
+    parser.add_argument("--interval", type=int, default=75,
+                        help="Save every Nth frame (default: 60)")
     parser.add_argument("--prefix", default="frame",
                         help="Filename prefix for saved frames (default: frame)")
     args = parser.parse_args()
@@ -42,6 +42,13 @@ def main() -> None:
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Clear any existing JPGs from a previous run.
+    existing = list(output_dir.glob("*.jpg"))
+    if existing:
+        for f in existing:
+            f.unlink()
+        print(f"Cleared {len(existing)} existing file(s) from {output_dir.resolve()}")
 
     cap = open_video(args.video)
 
