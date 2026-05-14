@@ -2,7 +2,7 @@
 1. Upload ensantina.mp4 or another salamander video to the root of the project
 2. Run this in the root of the project to process the video
     ``` bash
-    python scripts/extract_frames.py --video ensantina.mp4
+    python scripts/extract_frames.py --video clip1.mp4 clip2.mp4
     ```
 
 ## Label Data in data directory

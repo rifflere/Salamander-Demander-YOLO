@@ -27,8 +27,8 @@ def open_video(path: str):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--video", required=True,
-                        help="Path to the input video file")
+    parser.add_argument("--video", required=True, nargs="+",
+                        help="Path(s) to input video file(s)")
     parser.add_argument("--output-dir", default="data/captured",
                         help="Directory to save extracted frames (default: data/captured)")
     parser.add_argument("--interval", type=int, default=75,
@@ -50,39 +50,43 @@ def main() -> None:
             f.unlink()
         print(f"Cleared {len(existing)} existing file(s) from {output_dir.resolve()}")
 
-    cap = open_video(args.video)
+    multiple = len(args.video) > 1
+    for video_path in args.video:
+        prefix = args.prefix if not multiple else Path(video_path).stem
+        cap = open_video(video_path)
 
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    fps = cap.get(cv2.CAP_PROP_FPS) or 0
-    duration = total_frames / fps if fps else 0
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = cap.get(cv2.CAP_PROP_FPS) or 0
+        duration = total_frames / fps if fps else 0
 
-    print(f"Video : {args.video}")
-    print(f"Frames: {total_frames} total  |  {fps:.2f} fps  |  {duration:.1f}s duration")
-    print(f"Saving every {args.interval}th frame to {output_dir.resolve()}")
-    print()
+        print(f"Video : {video_path}")
+        print(f"Frames: {total_frames} total  |  {fps:.2f} fps  |  {duration:.1f}s duration")
+        print(f"Saving every {args.interval}th frame to {output_dir.resolve()}")
+        print()
 
-    frame_index = 0
-    saved = 0
+        frame_index = 0
+        saved = 0
 
-    while True:
-        ok, frame = cap.read()
-        if not ok:
-            break  # End of video or read error
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break  # End of video or read error
 
-        if frame_index % args.interval == 0:
-            # Zero-pad the frame number to match the total width (e.g. 00042).
-            width = len(str(total_frames)) if total_frames > 0 else 6
-            filename = f"{args.prefix}_{frame_index:0{width}d}.jpg"
-            path = output_dir / filename
-            cv2.imwrite(str(path), frame)
-            saved += 1
-            print(f"  [{saved}] {filename}  (frame {frame_index})")
+            if frame_index % args.interval == 0:
+                # Zero-pad the frame number to match the total width (e.g. 00042).
+                width = len(str(total_frames)) if total_frames > 0 else 6
+                filename = f"{prefix}_{frame_index:0{width}d}.jpg"
+                path = output_dir / filename
+                cv2.imwrite(str(path), frame)
+                saved += 1
+                print(f"  [{saved}] {filename}  (frame {frame_index})")
 
-        frame_index += 1
+            frame_index += 1
 
-    cap.release()
-    print()
-    print(f"Done. Saved {saved} frames from {frame_index} total to {output_dir.resolve()}")
+        cap.release()
+        print()
+        print(f"Done. Saved {saved} frames from {frame_index} total to {output_dir.resolve()}")
+        print()
 
 
 if __name__ == "__main__":
