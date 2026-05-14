@@ -15,6 +15,7 @@ Outputs land in runs/detect/<name>/ . The trained weights are at
 runs/detect/<name>/weights/best.pt.
 """
 import argparse
+from pathlib import Path
 
 from ultralytics import YOLO
 
@@ -26,7 +27,7 @@ def main() -> None:
                         help="Path to dataset.yaml (created by prepare_dataset.py)")
     parser.add_argument("--model", default="yolo11n.pt",
                         help="Base model to fine-tune (yolo11n/s/m/l/x.pt)")
-    parser.add_argument("--epochs", type=int, default=50,
+    parser.add_argument("--epochs", type=int, default=30,
                         help="Number of training epochs")
     parser.add_argument("--imgsz", type=int, default=320,
                         help="Training image size (320 is fast, 640 is the default)")
@@ -59,12 +60,15 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    project_root = Path(__file__).resolve().parent.parent
+
     model = YOLO(args.model)
     model.train(
         data=args.data,
         epochs=args.epochs,
         imgsz=args.imgsz,
         batch=args.batch,
+        project=str(project_root / "runs" / "detect"),
         name=args.name,
         device=args.device,
         hsv_s=args.hsv_s,
