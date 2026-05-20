@@ -32,3 +32,11 @@ python scripts/visualize_augmentations.py
 ```
 python scripts/train.py
 ```
+
+
+Set up venv
+```
+cd backend
+python3 -m venv venv
+source venv/bin/activate     # Windows: venv\\Scripts\activate
+```
