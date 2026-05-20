@@ -33,8 +33,10 @@ def main() -> None:
                         help="Directory to save extracted frames (default: data/captured)")
     parser.add_argument("--interval", type=int, default=75,
                         help="Save every Nth frame (default: 60)")
-    parser.add_argument("--prefix", default="frame",
-                        help="Filename prefix for saved frames (default: frame)")
+    parser.add_argument("--prefix", default=None,
+                        help="Filename prefix for saved frames (default: video filename stem)")
+    parser.add_argument("--clear", action="store_true",
+                        help="Delete existing JPGs in the output directory before extracting")
     args = parser.parse_args()
 
     if args.interval < 1:
@@ -43,16 +45,15 @@ def main() -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Clear any existing JPGs from a previous run.
-    existing = list(output_dir.glob("*.jpg"))
-    if existing:
-        for f in existing:
-            f.unlink()
-        print(f"Cleared {len(existing)} existing file(s) from {output_dir.resolve()}")
+    if args.clear:
+        existing = list(output_dir.glob("*.jpg"))
+        if existing:
+            for f in existing:
+                f.unlink()
+            print(f"Cleared {len(existing)} existing file(s) from {output_dir.resolve()}")
 
-    multiple = len(args.video) > 1
     for video_path in args.video:
-        prefix = args.prefix if not multiple else Path(video_path).stem
+        prefix = args.prefix or Path(video_path).stem
         cap = open_video(video_path)
 
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
