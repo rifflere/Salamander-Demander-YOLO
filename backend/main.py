@@ -4,6 +4,8 @@ from pathlib import Path
 import cv2
 from ultralytics import YOLO
 
+from threading import Thread
+
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -29,14 +31,13 @@ app.add_middleware(
 
 app.mount("/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
 
+job = {"status": "idle"}
+
 @app.get("/")
 def root():
     return {"ok": True}
 
-@app.post("/track")
-def start_track(video: UploadFile = File(...)):
-    (VIDEOS_DIR / "input.mp4").write_bytes(video.file.read())
-
+def run_track_job():
     input_path = VIDEOS_DIR / "input.mp4"
     cap = cv2.VideoCapture(str(input_path))
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -70,6 +71,8 @@ def start_track(video: UploadFile = File(...)):
         if frame_idx % 30 == 0:
             print(f"frame {frame_idx}/{total}")
 
+        job["percent"] = int((frame_idx + 1) / total * 100)
+
     cap.release()
     writer.release()
 
@@ -82,11 +85,26 @@ def start_track(video: UploadFile = File(...)):
         for tid, count in frames_seen.items()
     ]
 
-    return {
-        "status": "done",
+    job.clear()
+    job["status"] = "done"
+    job["percent"] = 100
+    job["result"] = {
         "video_url": f"http://localhost:8000/videos/output.mp4?t={int(time.time())}",
         "tracks": tracks,
     }
+
+@app.post("/track")
+def start_track(video: UploadFile = File(...)):
+    (VIDEOS_DIR / "input.mp4").write_bytes(video.file.read())
+    job.clear()
+    job["status"] = "processing"
+    job["percent"] = 0
+    run_track_job()
+    return job["result"]
+    
+@app.get("/track")
+def get_track():
+    return job
 
 if __name__ == "__main__":
     import uvicorn
