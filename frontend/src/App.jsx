@@ -9,6 +9,8 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [percent, setPercent] = useState(0)
   const [showPath, setShowPath] = useState(false)
+  const [showHeatmap, setShowHeatmap] = useState(false)
+  const [heatmapUrl, setHeatmapUrl] = useState(null)
 
   async function handleSubmit(e) {
     e.preventDefault()

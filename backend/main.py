@@ -52,9 +52,21 @@ def draw_paths(frame, track_history):
         pts = np.array(points, dtype=np.int32).reshape(-1, 1, 2)
         cv2.polylines(frame, [pts], isClosed=False, color=color, thickness=4)
 
+# Normalizes the detection accumulator, applies a color map, blends with a reference frame,
+# and saves the result as heatmap.png in the videos directory.
+def generate_heatmap(accumulator, reference_frame):
+    normalized = cv2.normalize(accumulator, None, 0, 255, cv2.NORM_MINMAX)
+    colormap = cv2.applyColorMap(np.uint8(normalized), cv2.COLORMAP_JET)
+    if reference_frame is not None:
+        blended = cv2.addWeighted(reference_frame, 0.35, colormap, 0.65, 0)
+    else:
+        blended = colormap
+    cv2.imwrite(str(VIDEOS_DIR / "heatmap.png"), blended)
+
 # Processes the uploaded video frame-by-frame, runs YOLO tracking, and writes output.mp4.
 # If show_path is True, a cumulative movement trail is drawn for each tracked salamander.
-def run_track_job(show_path: bool = False):
+# If show_heatmap is True, a position heatmap PNG is generated after processing.
+def run_track_job(show_path: bool = False, show_heatmap: bool = False):
     try:
         input_path = VIDEOS_DIR / "input.mp4"
         cap = cv2.VideoCapture(str(input_path))
@@ -75,11 +87,18 @@ def run_track_job(show_path: bool = False):
         frames_seen = defaultdict(int)
         label_for = {}
         track_history = defaultdict(list)  # tid -> [(cx, cy), ...]
+        accumulator = np.zeros((height, width), dtype=np.float32) if show_heatmap else None
+        heatmap_radius = max(width, height) // 25
+        reference_frame = None
 
         for frame_idx in range(total):
             ok, frame = cap.read()
             if not ok:
                 break
+
+            if show_heatmap and reference_frame is None:
+                reference_frame = frame.copy()
+
             result = model.track(frame, persist=True, verbose=False)[0]
             annotated = result.plot()
 
@@ -92,10 +111,15 @@ def run_track_job(show_path: bool = False):
                     frames_seen[tid] += 1
                     label_for[tid] = model.names[int(cls_id)]
 
-                    if show_path:
+                    if show_path or show_heatmap:
                         cx = int((xyxy[0] + xyxy[2]) / 2)
                         cy = int((xyxy[1] + xyxy[3]) / 2)
-                        track_history[tid].append((cx, cy))
+
+                        if show_path:
+                            track_history[tid].append((cx, cy))
+
+                        if show_heatmap:
+                            cv2.circle(accumulator, (cx, cy), heatmap_radius, 1.0, -1)
 
             if show_path:
                 draw_paths(annotated, track_history)
@@ -110,6 +134,9 @@ def run_track_job(show_path: bool = False):
         cap.release()
         writer.release()
 
+        if show_heatmap:
+            generate_heatmap(accumulator, reference_frame)
+
         tracks = [
             {
                 "track_id": tid,
@@ -122,24 +149,31 @@ def run_track_job(show_path: bool = False):
         job.clear()
         job["status"] = "done"
         job["percent"] = 100
-        job["result"] = {
+        result = {
             "video_url": f"http://localhost:8000/videos/output.mp4?t={int(time.time())}",
             "tracks": tracks,
         }
+        if show_heatmap:
+            result["heatmap_url"] = f"http://localhost:8000/videos/heatmap.png?t={int(time.time())}"
+        job["result"] = result
     except Exception as e:
         print(f"error: {e}", flush=True)
         job.clear()
         job["status"] = "error"
         job["message"] = str(e)
 
-# Accepts the video file and an optional show_path flag, then kicks off background processing.
+# Accepts the video file and optional show_path/show_heatmap flags, then kicks off background processing.
 @app.post("/track")
-def start_track(video: UploadFile = File(...), show_path: bool = Form(False)):
+def start_track(
+    video: UploadFile = File(...),
+    show_path: bool = Form(False),
+    show_heatmap: bool = Form(False),
+):
     (VIDEOS_DIR / "input.mp4").write_bytes(video.file.read())
     job.clear()
     job["status"] = "processing"
     job["percent"] = 0
-    Thread(target=run_track_job, args=(show_path,), daemon=True).start()
+    Thread(target=run_track_job, args=(show_path, show_heatmap), daemon=True).start()
     return {"status": "processing"}
     
 @app.get("/track")
