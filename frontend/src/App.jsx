@@ -7,20 +7,46 @@ function App() {
   const [tracks, setTracks] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [percent, setPercent] = useState(0)
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!file) return
     setError(null)
+    setVideoUrl(null)
+    setTracks(null)
+    setPercent(0)
     setLoading(true)
+
     try {
       const form = new FormData()
       form.append('video', file)
       const res = await fetch('http://localhost:8000/track', { method: 'POST', body: form })
       if (!res.ok) throw new Error(`Server error: ${res.status}`)
-      const data = await res.json()
-      setVideoUrl(data.video_url)
-      setTracks(data.tracks)
+
+      await new Promise((resolve, reject) => {
+        const interval = setInterval(async () => {
+          try {
+            const pollRes = await fetch('http://localhost:8000/track')
+            const data = await pollRes.json()
+
+            if (data.percent !== undefined) setPercent(data.percent)
+
+            if (data.status === 'done') {
+              clearInterval(interval)
+              setVideoUrl(data.result.video_url)
+              setTracks(data.result.tracks)
+              resolve()
+            } else if (data.status === 'error') {
+              clearInterval(interval)
+              reject(new Error(data.message || 'Processing failed'))
+            }
+          } catch (err) {
+            clearInterval(interval)
+            reject(err)
+          }
+        }, 500)
+      })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -36,7 +62,7 @@ function App() {
           {loading ? 'Processing...' : 'Upload'}
         </button>
       </form>
-      {loading && <p>Processing... this may take a minute.</p>}
+      {loading && <progress value={percent} max={100} />}
       {error && <pre>Error: {error}</pre>}
       {videoUrl && <video src={videoUrl} controls />}
       {tracks && (

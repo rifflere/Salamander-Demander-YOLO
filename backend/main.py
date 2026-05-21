@@ -38,60 +38,66 @@ def root():
     return {"ok": True}
 
 def run_track_job():
-    input_path = VIDEOS_DIR / "input.mp4"
-    cap = cv2.VideoCapture(str(input_path))
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    print(f"fps={fps} dims={width}x{height} frames={total}")
+    try:
+        input_path = VIDEOS_DIR / "input.mp4"
+        cap = cv2.VideoCapture(str(input_path))
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        print(f"fps={fps} dims={width}x{height} frames={total}")
 
-    output_path = VIDEOS_DIR / "output.mp4"
-    writer = cv2.VideoWriter(
-        str(output_path),
-        cv2.VideoWriter_fourcc(*"avc1"),
-        fps,
-        (width, height),
-    )
+        output_path = VIDEOS_DIR / "output.mp4"
+        writer = cv2.VideoWriter(
+            str(output_path),
+            cv2.VideoWriter_fourcc(*"avc1"),
+            fps,
+            (width, height),
+        )
 
-    frames_seen = defaultdict(int)
-    label_for = {}
+        frames_seen = defaultdict(int)
+        label_for = {}
 
-    for frame_idx in range(total):
-        ok, frame = cap.read()
-        if not ok:
-            break
-        result = model.track(frame, persist=True, verbose=False)[0]
-        writer.write(result.plot())
-        boxes = result.boxes
-        if boxes is not None and boxes.id is not None:
-            for tid, cls_id in zip(boxes.id.tolist(), boxes.cls.tolist()):
-                frames_seen[int(tid)] += 1
-                label_for[int(tid)] = model.names[int(cls_id)]
-        if frame_idx % 30 == 0:
-            print(f"frame {frame_idx}/{total}")
+        for frame_idx in range(total):
+            ok, frame = cap.read()
+            if not ok:
+                break
+            result = model.track(frame, persist=True, verbose=False)[0]
+            writer.write(result.plot())
+            boxes = result.boxes
+            if boxes is not None and boxes.id is not None:
+                for tid, cls_id in zip(boxes.id.tolist(), boxes.cls.tolist()):
+                    frames_seen[int(tid)] += 1
+                    label_for[int(tid)] = model.names[int(cls_id)]
+            if frame_idx % 30 == 0:
+                print(f"frame {frame_idx}/{total}")
 
-        job["percent"] = int((frame_idx + 1) / total * 100)
+            job["percent"] = int((frame_idx + 1) / total * 100)
 
-    cap.release()
-    writer.release()
+        cap.release()
+        writer.release()
 
-    tracks = [
-        {
-            "track_id": tid,
-            "time_on_screen_s": round(count / fps, 2),
-            "label": label_for[tid],
+        tracks = [
+            {
+                "track_id": tid,
+                "time_on_screen_s": round(count / fps, 2),
+                "label": label_for[tid],
+            }
+            for tid, count in frames_seen.items()
+        ]
+
+        job.clear()
+        job["status"] = "done"
+        job["percent"] = 100
+        job["result"] = {
+            "video_url": f"http://localhost:8000/videos/output.mp4?t={int(time.time())}",
+            "tracks": tracks,
         }
-        for tid, count in frames_seen.items()
-    ]
-
-    job.clear()
-    job["status"] = "done"
-    job["percent"] = 100
-    job["result"] = {
-        "video_url": f"http://localhost:8000/videos/output.mp4?t={int(time.time())}",
-        "tracks": tracks,
-    }
+    except Exception as e:
+        print(f"error: {e}", flush=True)
+        job.clear()
+        job["status"] = "error"
+        job["message"] = str(e)
 
 @app.post("/track")
 def start_track(video: UploadFile = File(...)):
@@ -99,8 +105,8 @@ def start_track(video: UploadFile = File(...)):
     job.clear()
     job["status"] = "processing"
     job["percent"] = 0
-    run_track_job()
-    return job["result"]
+    Thread(target=run_track_job, daemon=True).start()
+    return {"status": "processing"}
     
 @app.get("/track")
 def get_track():
