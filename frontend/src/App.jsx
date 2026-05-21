@@ -8,6 +8,7 @@ function App() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [percent, setPercent] = useState(0)
+  const [showPath, setShowPath] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -21,6 +22,7 @@ function App() {
     try {
       const form = new FormData()
       form.append('video', file)
+      form.append('show_path', showPath)
       const res = await fetch('http://localhost:8000/track', { method: 'POST', body: form })
       if (!res.ok) throw new Error(`Server error: ${res.status}`)
 
@@ -55,35 +57,63 @@ function App() {
   }
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <input type="file" accept="video/*" onChange={(e) => setFile(e.target.files[0])} />
-        <button type="submit" disabled={!file || loading}>
-          {loading ? 'Processing...' : 'Upload'}
-        </button>
-      </form>
-      {loading && <progress value={percent} max={100} />}
-      {error && <pre>Error: {error}</pre>}
-      {videoUrl && <video src={videoUrl} controls />}
-      {tracks && (
-        <table>
-          <thead>
-            <tr>
-              <th>Track ID</th>
-              <th>Label</th>
-              <th>Time on screen (s)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tracks.map((t) => (
-              <tr key={t.track_id}>
-                <td>{t.track_id}</td>
-                <td>{t.label}</td>
-                <td>{t.time_on_screen_s}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="app">
+      <header className="app-header">
+        <h1>Salamander Demander</h1>
+        <p>Upload a video to track salamanders using YOLO object detection</p>
+      </header>
+
+      <div className="upload-card">
+        <form onSubmit={handleSubmit}>
+          <div className="controls">
+            <input
+              className="file-input"
+              type="file"
+              accept="video/*"
+              onChange={(e) => setFile(e.target.files[0])}
+            />
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={showPath}
+                onChange={(e) => setShowPath(e.target.checked)}
+              />
+              Show path
+            </label>
+            <button className="upload-btn" type="submit" disabled={!file || loading}>
+              {loading ? 'Processing...' : 'Upload'}
+            </button>
+          </div>
+
+          {loading && <progress className="progress-bar" value={percent} max={100} />}
+          {error && <div className="error-box">Error: {error}</div>}
+        </form>
+      </div>
+
+      {(videoUrl || tracks) && (
+        <div className="results">
+          {videoUrl && <video src={videoUrl} controls />}
+          {tracks && (
+            <table>
+              <thead>
+                <tr>
+                  <th>Track ID</th>
+                  <th>Label</th>
+                  <th>Time on screen (s)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tracks.map((t) => (
+                  <tr key={t.track_id}>
+                    <td>{t.track_id}</td>
+                    <td>{t.label}</td>
+                    <td>{t.time_on_screen_s}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       )}
     </div>
   )

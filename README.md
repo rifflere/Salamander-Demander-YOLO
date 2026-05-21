@@ -46,13 +46,14 @@ npm run dev
 ## User Instructions
 1. Open the app in your browser (default: `http://localhost:5173`).
 2. Click **Choose File** and select a salamander video from your computer (any common video format works).
-3. Click **Upload** — the button will change to **Processing...** while the video is being analyzed.
-4. Watch the progress bar to track how far along the analysis is.
-5. Once processing finishes, the app displays:
-   - **Annotated video** — the original footage with bounding boxes drawn around each detected salamander, with native playback controls (play, pause, seek).
+3. (Optional) Check **Show path** to draw a movement trail on the video for each tracked salamander.
+4. Click **Upload** — the button will change to **Processing...** while the video is being analyzed.
+5. Watch the progress bar to track how far along the analysis is.
+6. Once processing finishes, the app displays:
+   - **Annotated video** — the original footage with bounding boxes drawn around each detected salamander, with native playback controls (play, pause, seek). If **Show path** was checked, a colored trail shows each salamander's movement history up to that point in the video.
    - **Metrics table** — one row per tracked salamander showing its Track ID, label, and total time on screen (in seconds).
 
-> If an error occurs, an error message will appear below the upload button with details.
+> If an error occurs, an error message will appear inside the upload card with details.
 
 ## Model Training Instructions
 ### Train Model

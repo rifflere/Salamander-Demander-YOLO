@@ -2,16 +2,15 @@ import time
 from pathlib import Path
 
 import cv2
+import numpy as np
 from ultralytics import YOLO
 
 from threading import Thread
 
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from collections import defaultdict
 
 VIDEOS_DIR = Path(__file__).parent / "videos"
@@ -33,11 +32,29 @@ app.mount("/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
 
 job = {"status": "idle"}
 
+# One distinct BGR color per track ID (cycles if there are more tracks than colors)
+TRAIL_COLORS = [
+    (255, 80, 80), (80, 255, 80), (80, 80, 255),
+    (255, 255, 80), (255, 80, 255), (80, 255, 255),
+    (255, 165, 80), (165, 80, 255),
+]
+
 @app.get("/")
 def root():
     return {"ok": True}
 
-def run_track_job():
+# Draws each track's accumulated centroid path as a polyline on the frame (in-place)
+def draw_paths(frame, track_history):
+    for tid, points in track_history.items():
+        if len(points) < 2:
+            continue
+        color = TRAIL_COLORS[tid % len(TRAIL_COLORS)]
+        pts = np.array(points, dtype=np.int32).reshape(-1, 1, 2)
+        cv2.polylines(frame, [pts], isClosed=False, color=color, thickness=4)
+
+# Processes the uploaded video frame-by-frame, runs YOLO tracking, and writes output.mp4.
+# If show_path is True, a cumulative movement trail is drawn for each tracked salamander.
+def run_track_job(show_path: bool = False):
     try:
         input_path = VIDEOS_DIR / "input.mp4"
         cap = cv2.VideoCapture(str(input_path))
@@ -57,18 +74,34 @@ def run_track_job():
 
         frames_seen = defaultdict(int)
         label_for = {}
+        track_history = defaultdict(list)  # tid -> [(cx, cy), ...]
 
         for frame_idx in range(total):
             ok, frame = cap.read()
             if not ok:
                 break
             result = model.track(frame, persist=True, verbose=False)[0]
-            writer.write(result.plot())
+            annotated = result.plot()
+
             boxes = result.boxes
             if boxes is not None and boxes.id is not None:
-                for tid, cls_id in zip(boxes.id.tolist(), boxes.cls.tolist()):
-                    frames_seen[int(tid)] += 1
-                    label_for[int(tid)] = model.names[int(cls_id)]
+                for tid, cls_id, xyxy in zip(
+                    boxes.id.tolist(), boxes.cls.tolist(), boxes.xyxy.tolist()
+                ):
+                    tid = int(tid)
+                    frames_seen[tid] += 1
+                    label_for[tid] = model.names[int(cls_id)]
+
+                    if show_path:
+                        cx = int((xyxy[0] + xyxy[2]) / 2)
+                        cy = int((xyxy[1] + xyxy[3]) / 2)
+                        track_history[tid].append((cx, cy))
+
+            if show_path:
+                draw_paths(annotated, track_history)
+
+            writer.write(annotated)
+
             if frame_idx % 30 == 0:
                 print(f"frame {frame_idx}/{total}")
 
@@ -99,13 +132,14 @@ def run_track_job():
         job["status"] = "error"
         job["message"] = str(e)
 
+# Accepts the video file and an optional show_path flag, then kicks off background processing.
 @app.post("/track")
-def start_track(video: UploadFile = File(...)):
+def start_track(video: UploadFile = File(...), show_path: bool = Form(False)):
     (VIDEOS_DIR / "input.mp4").write_bytes(video.file.read())
     job.clear()
     job["status"] = "processing"
     job["percent"] = 0
-    Thread(target=run_track_job, daemon=True).start()
+    Thread(target=run_track_job, args=(show_path,), daemon=True).start()
     return {"status": "processing"}
     
 @app.get("/track")
