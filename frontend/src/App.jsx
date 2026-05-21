@@ -34,6 +34,7 @@ function App() {
           {loading ? 'Processing...' : 'Upload'}
         </button>
       </form>
+      {loading && <p>Processing... this may take a minute.</p>}
       {error && <pre>Error: {error}</pre>}
       {videoUrl && <video src={videoUrl} controls />}
     </div>
