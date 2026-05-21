@@ -18,6 +18,7 @@ function App() {
     setError(null)
     setVideoUrl(null)
     setTracks(null)
+    setHeatmapUrl(null)
     setPercent(0)
     setLoading(true)
 
@@ -25,6 +26,7 @@ function App() {
       const form = new FormData()
       form.append('video', file)
       form.append('show_path', showPath)
+      form.append('show_heatmap', showHeatmap)
       const res = await fetch('http://localhost:8000/track', { method: 'POST', body: form })
       if (!res.ok) throw new Error(`Server error: ${res.status}`)
 
@@ -40,6 +42,7 @@ function App() {
               clearInterval(interval)
               setVideoUrl(data.result.video_url)
               setTracks(data.result.tracks)
+              if (data.result.heatmap_url) setHeatmapUrl(data.result.heatmap_url)
               resolve()
             } else if (data.status === 'error') {
               clearInterval(interval)
@@ -82,6 +85,14 @@ function App() {
               />
               Show path
             </label>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={showHeatmap}
+                onChange={(e) => setShowHeatmap(e.target.checked)}
+              />
+              Show heatmap
+            </label>
             <button className="upload-btn" type="submit" disabled={!file || loading}>
               {loading ? 'Processing...' : 'Upload'}
             </button>
@@ -92,9 +103,15 @@ function App() {
         </form>
       </div>
 
-      {(videoUrl || tracks) && (
+      {(videoUrl || tracks || heatmapUrl) && (
         <div className="results">
           {videoUrl && <video src={videoUrl} controls />}
+          {heatmapUrl && (
+            <div>
+              <h2>Position Heatmap</h2>
+              <img src={heatmapUrl} alt="Position heatmap" style={{ width: '100%', maxWidth: 720, borderRadius: 8 }} />
+            </div>
+          )}
           {tracks && (
             <table>
               <thead>
