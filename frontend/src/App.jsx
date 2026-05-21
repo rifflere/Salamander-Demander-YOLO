@@ -4,6 +4,7 @@ import './App.css'
 function App() {
   const [file, setFile] = useState(null)
   const [videoUrl, setVideoUrl] = useState(null)
+  const [tracks, setTracks] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -19,6 +20,7 @@ function App() {
       if (!res.ok) throw new Error(`Server error: ${res.status}`)
       const data = await res.json()
       setVideoUrl(data.video_url)
+      setTracks(data.tracks)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -37,6 +39,26 @@ function App() {
       {loading && <p>Processing... this may take a minute.</p>}
       {error && <pre>Error: {error}</pre>}
       {videoUrl && <video src={videoUrl} controls />}
+      {tracks && (
+        <table>
+          <thead>
+            <tr>
+              <th>Track ID</th>
+              <th>Label</th>
+              <th>Time on screen (s)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tracks.map((t) => (
+              <tr key={t.track_id}>
+                <td>{t.track_id}</td>
+                <td>{t.label}</td>
+                <td>{t.time_on_screen_s}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   )
 }
