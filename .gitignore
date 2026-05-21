@@ -12,7 +12,6 @@ labelstudio_data/
 
 # Trained model weights and runs
 runs/
-*.pt
 
 # Generated outputs
 augmentations.pdf
