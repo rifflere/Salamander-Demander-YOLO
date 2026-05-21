@@ -56,11 +56,12 @@ npm run dev
 
 ## Model Training Instructions
 ### Train Model
-1. Upload ensantina.mp4 or another salamander video to the root of the project
-2. Run this in the root of the project to process the video
+1. Upload a training video to the `model` directory
+2. `cd model`
+2. Process the video
     First batch — clear old frames and start fresh
-    ```
-    python scripts/extract_frames.py --video clip1.mp4 clip2.mp4 --clear
+    ```bash
+    python scripts/extract_frames.py --video clip1.mp4 clip2.mp4 --clear # replace "clip1.mp4" and "clip2.mp4" with your video name
     ```
     Add more later without wiping what's already there
     ```
@@ -68,7 +69,8 @@ npm run dev
     ```
 
 ### Label Data in data directory
-To open Label Studio:
+Open Docker on your computer.  
+Open Label Studio:
 ```bash
 docker run -it -p 8080:8080 -v ${PWD}/data/labelstudio:/label-studio/data heartexlabs/label-studio:latest
 ```
@@ -88,5 +90,9 @@ python scripts/visualize_augmentations.py
 ```
 python scripts/train.py
 ```
+#### Update the app model
+Delete `backend/best.pt`.
+Copy `best.pt` from `model/runs/detect/train/weights/`, and paste it into `backend/`. Restart app.
+
 ## Reflection
 ### Color Masking vs. YOLO comparison
