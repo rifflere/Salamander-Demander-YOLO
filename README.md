@@ -1,35 +1,59 @@
 # Salamander-Demander-YOLO
-## Run App
-Set up venv
+Created by Augy + Rebecca
 
-on Windows:
+This app takes in a video of a salamander, then uses YOLO to process the video, identifying metric information about salamanders in the video.
+
+**Table of Contents**
+1. [Run Instructions](#run-instructions)
+1. [User Instruction](#user-instructions)
+1. [Model Training Notes](#model-training-notes)
+
+
+## Run Instructions
+You will need to have two terminals open, one to run the backend and one two run the frontend.
+
+### Set up backend
+#### Set up venv
+on *Windows*:
 ```bash
 cd backend
 python3 -m venv venv
 source venv\\Scripts\\activate
 ```
 
-on Mac or Linux:
+on *Mac or Linux*:
 ```bash
 cd backend
 python3 -m venv venv
 source venv/bin/activate
 ```
-
-## Run Backend
+#### Run Backend
 ```bash
 cd backend/
 pip install -r requirements.txt # This will take a moment
 python main.py
 ```
-
-In separate terminal:
-## Run Frontend
+### Set up Frontend
+In a different terminal, run:
 ```bash
 cd frontend/
 npm i
 npm run dev
 ```
+## User Instructions
+1. Open the app in your browser (default: `http://localhost:5173`).
+2. Click **Choose File** and select a salamander video from your computer (any common video format works).
+3. Click **Upload** — the button will change to **Processing...** while the video is being analyzed.
+4. Watch the progress bar to track how far along the analysis is.
+5. Once processing finishes, the app displays:
+   - **Annotated video** — the original footage with bounding boxes drawn around each detected salamander, with native playback controls (play, pause, seek).
+   - **Metrics table** — one row per tracked salamander showing its Track ID, label, and total time on screen (in seconds).
+
+> If an error occurs, an error message will appear below the upload button with details.
+
+## Model Training Notes
+### Color Masking vs. YOLO comparison
+---
 ## Train Model
 1. Upload ensantina.mp4 or another salamander video to the root of the project
 2. Run this in the root of the project to process the video
@@ -48,7 +72,6 @@ To open Label Studio:
 docker run -it -p 8080:8080 -v ${PWD}/data/labelstudio:/label-studio/data heartexlabs/label-studio:latest
 ```
 Label the data then extract the zip file created into the data folder of this project.
-
 ## Create the Model
 ### Prepare Dataset
 ```
