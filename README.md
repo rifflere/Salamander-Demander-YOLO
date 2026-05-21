@@ -35,8 +35,30 @@ python scripts/train.py
 
 
 Set up venv
+
+on Windows:
 ```
 cd backend
 python3 -m venv venv
-source venv/bin/activate     # Windows: venv\\Scripts\activate
+source venv\\Scripts\\activate
+```
+
+on Mac or Linux:
+```
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+```
+
+## Run Backend
+```
+cd backend/
+python main.py
+```
+
+In separate terminal:
+## Run Frontend
+```
+cd frontend/
+npm run dev
 ```
