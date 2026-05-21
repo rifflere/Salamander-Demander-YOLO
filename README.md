@@ -1,4 +1,36 @@
 # Salamander-Demander-YOLO
+## Run App
+Set up venv
+
+on Windows:
+```bash
+cd backend
+python3 -m venv venv
+source venv\\Scripts\\activate
+```
+
+on Mac or Linux:
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+```
+
+## Run Backend
+```bash
+cd backend/
+pip install -r requirements.txt # This will take a moment
+python main.py
+```
+
+In separate terminal:
+## Run Frontend
+```bash
+cd frontend/
+npm i
+npm run dev
+```
+## Train Model
 1. Upload ensantina.mp4 or another salamander video to the root of the project
 2. Run this in the root of the project to process the video
     First batch — clear old frames and start fresh
@@ -33,32 +65,3 @@ python scripts/visualize_augmentations.py
 python scripts/train.py
 ```
 
-
-Set up venv
-
-on Windows:
-```
-cd backend
-python3 -m venv venv
-source venv\\Scripts\\activate
-```
-
-on Mac or Linux:
-```
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-```
-
-## Run Backend
-```
-cd backend/
-python main.py
-```
-
-In separate terminal:
-## Run Frontend
-```
-cd frontend/
-npm run dev
-```
