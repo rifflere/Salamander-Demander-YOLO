@@ -1,7 +1,7 @@
 # Salamander-Demander-YOLO
 *Created by [Augy](https://www.linkedin.com/in/augy-markham/) + [Rebecca](https://www.linkedin.com/in/rebecca-riffle/)*
 
-A YOLO-based app that analyzes salamander videos to track individual salamanders and extract metrics like bounding box coordinates and time on screen.
+A YOLO-based app that analyzes salamander videos to track individual salamanders and extract metrics including time on screen, movement path trails, and position heatmaps.
 
 This is a reimagination of the 2025 Centroid Finder App ([backend](https://github.com/rifflere/Centroid-Finder-App), [frontend](https://github.com/rifflere/centroid-finder-frontend)) — built by Rebecca, Augy, and [Tyler](https://www.linkedin.com/in/dev-tylergilmore/) in collaboration with researchers at OSU — which used color masking algorithms to locate salamanders frame-by-frame and export CSV location data. This version replaces that approach with YOLO object detection for more robust tracking.
 
@@ -46,11 +46,13 @@ npm run dev
 ## User Instructions
 1. Open the app in your browser (default: `http://localhost:5173`).
 2. Click **Choose File** and select a salamander video from your computer (any common video format works).
-3. (Optional) Check **Show path** to draw a movement trail on the video for each tracked salamander.
-4. Click **Upload** — the button will change to **Processing...** while the video is being analyzed.
-5. Watch the progress bar to track how far along the analysis is.
-6. Once processing finishes, the app displays:
+3. (Optional) Check **Show path** to draw a colored movement trail on the video for each tracked salamander.
+4. (Optional) Check **Show heatmap** to generate a position heatmap image showing where salamanders spent the most time.
+5. Click **Upload** — the button will change to **Processing...** while the video is being analyzed.
+6. Watch the progress bar to track how far along the analysis is.
+7. Once processing finishes, the app displays:
    - **Annotated video** — the original footage with bounding boxes drawn around each detected salamander, with native playback controls (play, pause, seek). If **Show path** was checked, a colored trail shows each salamander's movement history up to that point in the video.
+   - **Position heatmap** — (if **Show heatmap** was checked) a single image overlaid on a reference frame, using a blue-to-red color scale to show where salamanders spent the most time.
    - **Metrics table** — one row per tracked salamander showing its Track ID, label, and total time on screen (in seconds).
 
 > If an error occurs, an error message will appear inside the upload card with details.
