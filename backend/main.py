@@ -119,7 +119,9 @@ def run_track_job(show_path: bool = False, show_heatmap: bool = False):
                             track_history[tid].append((cx, cy))
 
                         if show_heatmap:
-                            cv2.circle(accumulator, (cx, cy), heatmap_radius, 1.0, -1)
+                            temp = np.zeros_like(accumulator)
+                            cv2.circle(temp, (cx, cy), heatmap_radius, 1.0, -1)
+                            accumulator += temp
 
             if show_path:
                 draw_paths(annotated, track_history)
