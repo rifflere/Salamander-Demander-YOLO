@@ -86,7 +86,23 @@ video {
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  accent-color: var(--accent);
+  appearance: none;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.progress-bar::-webkit-progress-bar {
+  background: var(--border);
+}
+
+.progress-bar::-webkit-progress-value {
+  background: var(--accent);
+  border-radius: 3px;
+}
+
+.progress-bar::-moz-progress-bar {
+  background: var(--accent);
+  border-radius: 3px;
 }
 
 .error-box {
