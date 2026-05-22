@@ -120,7 +120,7 @@ If you are satisfied with the results of the training, replace the model in the 
 
 ## Reflection
 ### Color Masking vs. YOLO comparison
-Overall, YOLO helped us build the salamander detector more quickly, but gave us a lot less control over the outcomes.
+A year ago we built an image detection app that had a similar interface, but was very different 'under the hood'. Our previous model relied on manual color tracking. We binarized the image based on a user-provided target color and threshhold, then used a graph search algorithm to locate the largest area that fit the target color, and tracked the centroid location over each frame, generating a CSV output that identified salamander location at each one second interval. This new app runs YOLO to detect salamanders based on a model that we trained. We were able to build the model and send meaningful metrics to the front end relatively quickly, but the model has some limitations that are tricky to fix, for example, if a salamander leaves the screen and comes back, the model counts it as a new salamander, resulting in some weird data. The YOLO-based app was able to handle some cases that would have challenged our original model, such as multiple salamanders and salamanders that were a close color match to the backdrop. Overall, YOLO helped us build the salamander detector more quickly, but gave us a lot less control over the outcomes.
 
 | | Color Masking | YOLO |
 | --- | --- | --- |
@@ -128,7 +128,6 @@ Overall, YOLO helped us build the salamander detector more quickly, but gave us 
 | Complexity to modify detection algorithm | Medium | High |
 | Consistency of results | High | Medium |
 | Ability to handle variability in videos | Low | High |
-
 
 ## Note
 ### Why Salamander Videos
