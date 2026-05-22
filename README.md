@@ -10,6 +10,7 @@ This is a reimagination of the 2025 Centroid Finder App ([backend](https://githu
 1. [User Instruction](#user-instructions)
 1. [Model Training Instructions](#model-training-instructions)
 1. [Reflection](#reflection)
+1. [Notes](#note)
 
 
 ## Run Instructions
@@ -55,10 +56,8 @@ npm run dev
    - **Metrics table** — one row per tracked salamander showing its Track ID, label, and total time on screen (in seconds).
 
 > If an error occurs, an error message will appear inside the upload card with details.
-
 ## Model Training Instructions
 This project is built on a model trained to detect [salamander movement](#why-salamander-videos) in videos. We have included the services we used to build our model, so you may *optionally* train a new model to track different targets. This section requires a little more technical experience, and for Docker to be running on your computer.
-
 ### Set up venv
 on *Windows*:
 ```bash
@@ -67,7 +66,6 @@ python3 -m venv venv
 source venv\\Scripts\\activate
 pip install -r requirements.txt # This will take a few minutes
 ```
-
 on *Mac or Linux*:
 ```bash
 cd model
@@ -78,16 +76,16 @@ pip install -r requirements.txt # This will take a few minutes
 ### Upload Training Video(s)
 1. Upload training video(s) to the `model` directory.
 2. Process the video
-    
-    First batch — clear old frames and start fresh
-    ```bash
-    cd model
-    python scripts/extract_frames.py --video clip1.mp4 clip2.mp4 --clear # replace "clip1.mp4" and "clip2.mp4" with your video name
-    ```
-    Add more later without wiping what's already there
-    ```bash
-    python scripts/extract_frames.py --interval 30 --video clip3.mp4 # replace "clip3.mp4" with your video name
-    ```
+
+First batch — clear old frames and start fresh
+```bash
+cd model
+python scripts/extract_frames.py --video clip1.mp4 clip2.mp4 --clear # replace "clip1.mp4" and "clip2.mp4" with your video name
+```
+Add more later without wiping what's already there
+```bash
+python scripts/extract_frames.py --interval 30 --video clip3.mp4 # replace "clip3.mp4" with your video name
+```
 ### Label Data
 Open Docker on your computer.  
 Open Label Studio:
@@ -101,7 +99,6 @@ Export dataset to the data directory:
 ```
 python scripts/prepare_dataset.py --export-dir data
 ```
-
 #### Visualize Augmentation
 Generate visual augmentations:
 ```
@@ -117,9 +114,17 @@ Open `runs/detect/run1/results.png` to see the loss and accuracy curves over tra
 If you are satisfied with the results of the training, replace the model in the backend with the new model.
 1. Delete `backend/best.pt`.
 2. Copy `best.pt` from `model/runs/detect/train/weights/`, and paste it into `backend/`. Restart backend.
-
-## Reflection
-### Color Masking vs. YOLO comparison
+## Model Information
+This model was trained on ~300 labeled frames drawn from 5 videos covering a range of 
+scenarios (a live salamander on a high-contrast background, two plastic salamanders 
+entering and exiting the frame, etc.). We fine-tuned a [YOLOv11n](https://docs.ultralytics.com) 
+base model using the [pipeline described above](#model-training-instructions): 30 epochs, 
+image size 320×320, and a batch size of 8.
+## Notes
+### Why Salamander Videos
+This project was originally intended to help with a specific research project. This model has been trained on top-down videos of both real and plastic salamanders moving around a rectangular area.
+### Reflection
+#### Color Masking vs. YOLO comparison
 A year ago we built an image detection app that had a similar interface, but was very different 'under the hood'. Our previous model relied on manual color tracking. We binarized the image based on a user-provided target color and threshhold, then used a graph search algorithm to locate the largest area that fit the target color, and tracked the centroid location over each frame, generating a CSV output that identified salamander location at each one second interval. This new app runs YOLO to detect salamanders based on a model that we trained. We were able to build the model and send meaningful metrics to the front end relatively quickly, but the model has some limitations that are tricky to fix, for example, if a salamander leaves the screen and comes back, the model counts it as a new salamander, resulting in some weird data. The YOLO-based app was able to handle some cases that would have challenged our original model, such as multiple salamanders and salamanders that were a close color match to the backdrop. Overall, YOLO helped us build the salamander detector more quickly, but gave us a lot less control over the outcomes.
 
 | | Color Masking | YOLO |
@@ -128,7 +133,3 @@ A year ago we built an image detection app that had a similar interface, but was
 | Complexity to modify detection algorithm | Medium | High |
 | Consistency of results | High | Medium |
 | Ability to handle variability in videos | Low | High |
-
-## Note
-### Why Salamander Videos
-This project was originally intended to help with a specific research project. This model has been trained on top-down videos of both real and plastic salamanders moving around a rectangular area.
