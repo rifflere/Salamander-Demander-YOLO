@@ -22,6 +22,7 @@ on *Windows*:
 cd backend
 python3 -m venv venv
 source venv\\Scripts\\activate
+pip install -r requirements.txt # This may take a few minutes
 ```
 
 on *Mac or Linux*:
@@ -29,11 +30,9 @@ on *Mac or Linux*:
 cd backend
 python3 -m venv venv
 source venv/bin/activate
-```
+pip install -r requirements.txt # This may take a few minutes
 #### Run Backend
 ```bash
-cd backend/
-pip install -r requirements.txt # This will take a moment
 python main.py
 ```
 ### Set up Frontend
@@ -45,7 +44,7 @@ npm run dev
 ```
 ## User Instructions
 1. Open the app in your browser (default: `http://localhost:5173`).
-2. Click **Choose File** and select a salamander video from your computer (any common video format works).
+2. Click **Choose File** and select a [salamander video](#why-salamander-videos) from your computer (any common video format works).
 3. (Optional) Check **Show path** to draw a colored movement trail on the video for each tracked salamander.
 4. (Optional) Check **Show heatmap** to generate a position heatmap image showing where salamanders spent the most time.
 5. Click **Upload** — the button will change to **Processing...** while the video is being analyzed.
@@ -58,44 +57,79 @@ npm run dev
 > If an error occurs, an error message will appear inside the upload card with details.
 
 ## Model Training Instructions
-### Train Model
-1. Upload a training video to the `model` directory
-2. `cd model`
+This project is built on a model trained to detect [salamander movement](#why-salamander-videos) in videos. We have included the services we used to build our model, so you may *optionally* train a new model to track different targets. This section requires a little more technical experience, and for Docker to be running on your computer.
+
+### Set up venv
+on *Windows*:
+```bash
+cd model
+python3 -m venv venv
+source venv\\Scripts\\activate
+pip install -r requirements.txt # This will take a few minutes
+```
+
+on *Mac or Linux*:
+```bash
+cd model
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt # This will take a few minutes
+```
+### Upload Training Video(s)
+1. Upload training video(s) to the `model` directory.
 2. Process the video
+    
     First batch — clear old frames and start fresh
     ```bash
+    cd model
     python scripts/extract_frames.py --video clip1.mp4 clip2.mp4 --clear # replace "clip1.mp4" and "clip2.mp4" with your video name
     ```
     Add more later without wiping what's already there
+    ```bash
+    python scripts/extract_frames.py --interval 30 --video clip3.mp4 # replace "clip3.mp4" with your video name
     ```
-    python scripts/extract_frames.py --interval 30 --video clip3.mp4
-    ```
-
-### Label Data in data directory
+### Label Data
 Open Docker on your computer.  
 Open Label Studio:
 ```bash
 docker run -it -p 8080:8080 -v ${PWD}/data/labelstudio:/label-studio/data heartexlabs/label-studio:latest
 ```
-Label the data then extract the zip file created into the data folder of this project.
+Label the data then extract the zip file created into `model/data`.
 ### Create the Model
 #### Prepare Dataset
+Export dataset to the data directory:
 ```
 python scripts/prepare_dataset.py --export-dir data
 ```
 
 #### Visualize Augmentation
+Generate visual augmentations:
 ```
 python scripts/visualize_augmentations.py
 ```
-
 #### Train The Model
+Train the model:
+```bash
+python scripts/train.py # This will take a few minutes to run, longer for long videos
 ```
-python scripts/train.py
-```
+Open `runs/detect/run1/results.png` to see the loss and accuracy curves over training.
 #### Update the app model
-Delete `backend/best.pt`.
-Copy `best.pt` from `model/runs/detect/train/weights/`, and paste it into `backend/`. Restart app.
+If you are satisfied with the results of the training, replace the model in the backend with the new model.
+1. Delete `backend/best.pt`.
+2. Copy `best.pt` from `model/runs/detect/train/weights/`, and paste it into `backend/`. Restart backend.
 
 ## Reflection
 ### Color Masking vs. YOLO comparison
+Overall, YOLO helped us build the salamander detector more quickly, but gave us a lot less control over the outcomes.
+
+| | Color Masking | YOLO |
+| --- | --- | --- |
+| Complexity to build | High | Low |
+| Complexity to modify detection algorithm | Medium | High |
+| Consistency of results | High | Medium |
+| Ability to handle variability in videos | Low | High |
+
+
+## Note
+### Why Salamander Videos
+This project was originally intended to help with a specific research project. This model has been trained on top-down videos of both real and plastic salamanders moving around a rectangular area.
