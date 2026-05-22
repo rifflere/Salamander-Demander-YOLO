@@ -1,4 +1,6 @@
 *.mp4
+*.png
+*.jpg
 
 # Python virtual environment
 venv/
@@ -20,3 +22,5 @@ augmentations.pdf
 .vscode/
 .idea/
 .DS_Store
+
+node_modules/
